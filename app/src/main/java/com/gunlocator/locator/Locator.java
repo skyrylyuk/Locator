@@ -4,6 +4,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -17,35 +18,11 @@ public class Locator extends Thread {
 
     private static short[][] buffers = new short[BUFF_COUNT][BUFFER_SIZE];
 
-    private final Handler handler;
+    private Handler handler;
     private AudioReceiverThread audioReceiverThread;
 
     public Locator() {
 
-        handler = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-
-                int rowNumber = msg.what;
-
-
-                double left = calculatePower(rowNumber, 0, CHUNK_SIZE);
-                double center = calculatePower(rowNumber, CHUNK_SIZE * 2, CHUNK_SIZE * 3);
-                double right = calculatePower(rowNumber, CHUNK_SIZE * 4, CHUNK_SIZE * 5);
-
-                double medians = (left + right) / 2;
-//                Log.w(TAG, "left = " + left + " center = " + center + " right = " + right + " medians = " + medians);
-//                Log.w(TAG, " center = " + center + " medians = " + medians);
-
-                double delta = center - medians;
-
-                        if (delta > 100000) {
-                    Log.w(TAG, "Shut detect [ delta " + delta + "]========================================================================");
-                }
-
-            }
-        };
     }
 
     @Override
@@ -54,6 +31,10 @@ public class Locator extends Thread {
 
         audioReceiverThread = new AudioReceiverThread();
         audioReceiverThread.start();
+
+        Looper.prepare();
+        handler = new LocatorHandler();
+        Looper.loop();
     }
 
     private double calculatePower(int row, int start, int finish) {
@@ -75,6 +56,29 @@ public class Locator extends Thread {
         super.interrupt();
     }
 
+    private class LocatorHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+                int rowNumber = msg.what;
+
+
+                double left = calculatePower(rowNumber, 0, CHUNK_SIZE);
+                double center = calculatePower(rowNumber, CHUNK_SIZE * 2, CHUNK_SIZE * 3);
+                double right = calculatePower(rowNumber, CHUNK_SIZE * 4, CHUNK_SIZE * 5);
+
+                double medians = (left + right) / 2;
+//                Log.w(TAG, "left = " + left + " center = " + center + " right = " + right + " medians = " + medians);
+//                Log.w(TAG, " center = " + center + " medians = " + medians);
+
+                double delta = center - medians;
+
+                        if (delta > 100000) {
+                    Log.w(TAG, "Shut detect [ delta " + delta + "]========================================================================");
+                }
+        }
+    }
     private class AudioReceiverThread extends Thread {
 
         private final int RATE = Rates.MEDIUM.value;
