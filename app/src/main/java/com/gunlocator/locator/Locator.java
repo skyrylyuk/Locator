@@ -12,14 +12,24 @@ public class Locator extends Thread {
 
     public static final String TAG = Locator.class.getSimpleName();
 
+    public static final int NOTIFICATION_LOCATOR = 555;
+    public static final int NOTIFICATION_UI = 556;
+
     private static final int BUFF_COUNT = 32;
+    private static final int BUFF_LAST_ROW = BUFF_COUNT - 1;
     private static final int CHUNK_SIZE = 512;
-    private static final int BUFFER_SIZE = CHUNK_SIZE * 5;
+    private static final int CHUNK_COUNT = 5;
+    private static final int BUFFER_SIZE = CHUNK_SIZE * CHUNK_COUNT;
 
     private static short[][] buffers = new short[BUFF_COUNT][BUFFER_SIZE];
 
     private Handler handler;
+
+    private Handler locatorHandler;
+
     private AudioReceiverThread audioReceiverThread;
+
+    private boolean isFirstRow = true;
 
     public Locator() {
 
@@ -33,7 +43,7 @@ public class Locator extends Thread {
         audioReceiverThread.start();
 
         Looper.prepare();
-        handler = new LocatorHandler();
+        locatorHandler = new LocatorHandler();
         Looper.loop();
     }
 
@@ -56,29 +66,68 @@ public class Locator extends Thread {
         super.interrupt();
     }
 
+    public void setHandler(Handler handler) {
+        this.handler = handler;
+    }
+
     private class LocatorHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
 
-                int rowNumber = msg.what;
+            Log.w(TAG, "LocatorHandler.handleMessage");
+
+            if (isFirstRow) {
+                isFirstRow = false;
+                return;
+            }
 
 
-                double left = calculatePower(rowNumber, 0, CHUNK_SIZE);
-                double center = calculatePower(rowNumber, CHUNK_SIZE * 2, CHUNK_SIZE * 3);
-                double right = calculatePower(rowNumber, CHUNK_SIZE * 4, CHUNK_SIZE * 5);
+            int rowNumber = msg.arg1;
+            long time = (long) msg.obj;
+            Log.w(TAG, "time = " + (System.currentTimeMillis() - time));
 
-                double medians = (left + right) / 2;
-//                Log.w(TAG, "left = " + left + " center = " + center + " right = " + right + " medians = " + medians);
-//                Log.w(TAG, " center = " + center + " medians = " + medians);
 
-                double delta = center - medians;
+            double left = 0, center = 0, right = 0;
 
-                        if (delta > 100000) {
-                    Log.w(TAG, "Shut detect [ delta " + delta + "]========================================================================");
+            for (int offset = 1; offset < CHUNK_COUNT; offset++) {
+                if (offset == 1) {
+                    left = calculatePower(rowNumber, 0, CHUNK_SIZE);
+                    center = calculatePower(rowNumber, CHUNK_SIZE * 2, CHUNK_SIZE * 3);
+                    right = calculatePower(rowNumber, CHUNK_SIZE * 4, CHUNK_SIZE * 5);
+                } else {
+                    if (rowNumber != BUFF_LAST_ROW) {
+                        left = calculatePower(rowNumber, CHUNK_SIZE * offset, CHUNK_SIZE * (offset + 1));
+                        if (offset <= 3) {
+                            center = calculatePower(rowNumber, CHUNK_SIZE * (offset + 1), CHUNK_SIZE * (offset + 2));
+                        } else {
+                            center = calculatePower(rowNumber + 1, CHUNK_SIZE * (offset - 4), CHUNK_SIZE * (offset - 3));
+                        }
+                        right = calculatePower(rowNumber + 1, CHUNK_SIZE * (offset - 2), CHUNK_SIZE * (offset -1));
+                    } else {
+                        left = calculatePower(rowNumber, CHUNK_SIZE * offset, CHUNK_SIZE * (offset + 1));
+                        if (offset <= 3) {
+                            center = calculatePower(rowNumber, CHUNK_SIZE * (offset + 1), CHUNK_SIZE * (offset + 2));
+                        } else {
+                            center = calculatePower(0, CHUNK_SIZE * (offset - 4), CHUNK_SIZE * (offset - 3));
+                        }
+                        right = calculatePower(0, CHUNK_SIZE * (offset - 2), CHUNK_SIZE * (offset -1));
+                    }
                 }
+
+            }
+
+            double medians = (left + right) / 2;
+
+            double delta = center - medians;
+
+            if (delta > 1000000) {
+                handler.sendMessage(handler.obtainMessage(NOTIFICATION_UI, (int) (delta / 1000000), 0));
+//                Log.w(TAG, "Shut detect [ delta " + delta + "]========================================================================");
+            }
         }
     }
+
     private class AudioReceiverThread extends Thread {
 
         private final int RATE = Rates.MEDIUM.value;
@@ -123,7 +172,7 @@ public class Locator extends Thread {
                 }
 
                 // send Message count
-                handler.sendMessage(handler.obtainMessage(count));
+                locatorHandler.sendMessage(locatorHandler.obtainMessage(NOTIFICATION_LOCATOR, count, 0, System.currentTimeMillis()));
                 count = (count + 1) % BUFF_COUNT;
             }
             try {

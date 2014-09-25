@@ -1,28 +1,24 @@
 package com.gunlocator;
 
-import android.media.AudioRecord;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.renderscript.Allocation;
-import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
-import com.gunlocator.locator.AudioReceiver;
 import com.gunlocator.locator.Locator;
-import com.gunlocator.locator.Rates;
-
-import java.util.Arrays;
 
 
 public class MainActivity extends ActionBarActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
-    private AudioReceiver audioReceiver;
+
+    private TextView txvLevel;
     private RenderScript renderScript;
 
     private int dataLength;
@@ -36,6 +32,7 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        txvLevel = (TextView) findViewById(R.id.txvLevel);
 
         renderScript = RenderScript.create(this);
     }
@@ -45,6 +42,7 @@ public class MainActivity extends ActionBarActivity {
 
 
         locator = new Locator();
+        locator.setHandler(handler);
         locator.start();
 
 /*
@@ -92,6 +90,13 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            txvLevel.setText("" + msg.arg1);
+        }
+    };
 
 
 }
