@@ -9,19 +9,17 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.gunlocator.locator.Locator;
 
 
 public class MainActivity extends ActionBarActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
-    short[] results = {1, 2, 3, 4, 5, 6, 7, 8, 9};
     private TextView txvLevel;
     //    private RenderScript renderScript;
-    private Button btnStop;
+    private ToggleButton tbtLocator;
     private int dataLength;
     private Allocation allocation;
     private Locator locator;
@@ -38,20 +36,24 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         txvLevel = (TextView) findViewById(R.id.txvLevel);
-        btnStop = (Button) findViewById(R.id.btnStop);
-        btnStop.setOnClickListener(v -> {
-            Toast.makeText(this, "Lambda", Toast.LENGTH_LONG).show();
-        });
+        tbtLocator = (ToggleButton) findViewById(R.id.tbtLocator);
+        tbtLocator.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (isChecked) {
+                        Log.w(TAG, "MainActivity.start Record");
+                        locator = new Locator();
+                        locator.setHandler(handler);
+                        locator.start();
+                    } else {
+                        Log.w(TAG, "MainActivity.stop Record");
+                        if (locator != null) {
+                            locator.interrupt();
+                        }
+                    }
+                }
+        );
 
 //        renderScript = RenderScript.create(this);
     }
-
-/*
-    public void stopRecord(View view) {
-        Log.w(TAG, "MainActivity.stopRecord");
-        locator.interrupt();
-    }
-*/
 
     public void startRecord(View view) {
         Log.w(TAG, "MainActivity.startRecord");
@@ -60,24 +62,6 @@ public class MainActivity extends ActionBarActivity {
         locator = new Locator();
         locator.setHandler(handler);
         locator.start();
-
-/*
-        new Thread() {
-
-            @Override
-            public void run() {
-                super.run();
-
-                audioReceiver = new AudioReceiver(Rates.MEDIUM);
-
-                dataLength = audioReceiver.getBuffSize();
-                allocation = Allocation.createSized(renderScript, Element.I16(renderScript), dataLength, Allocation.USAGE_SCRIPT);
-
-                audioReceiver.start();
-            }
-
-        }.start();*/
-
     }
 
     @Override
