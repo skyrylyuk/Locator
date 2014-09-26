@@ -1,6 +1,7 @@
 package com.gunlocator;
 
 import android.app.Application;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 
 /**
@@ -8,13 +9,21 @@ import android.content.pm.ApplicationInfo;
  */
 public class LocatorApp extends Application {
 
-    public static boolean idDebuggable;
+    private static Context applicationContext;
 
-    public LocatorApp() {
-        idDebuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    private static LocatorApp instance;
+
+    public static LocatorApp getInstance() {
+        return instance;
     }
 
-    public static boolean isDebug() {
-        return idDebuggable;
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        instance = this;
+    }
+
+    public boolean isDebug() {
+        return (instance.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
     }
 }

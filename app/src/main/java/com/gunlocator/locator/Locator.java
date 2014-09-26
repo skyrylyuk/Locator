@@ -9,8 +9,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.gunlocator.LocatorApp;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -30,7 +28,7 @@ public class Locator extends Thread {
     private static final int BUFFER_SIZE = CHUNK_SIZE * CHUNK_COUNT;
     private static short[][] buffers = new short[BUFF_COUNT][BUFFER_SIZE];
     private SimpleDateFormat format = new SimpleDateFormat("HH_mm");
-    private boolean isDebug = LocatorApp.isDebug();
+    private boolean isDebug = false; //LocatorApp.getInstance().isDebug();
     private Handler handler;
 
     private Handler locatorHandler;
