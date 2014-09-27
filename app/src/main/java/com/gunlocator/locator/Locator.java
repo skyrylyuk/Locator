@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 public class Locator extends Thread {
@@ -20,7 +21,7 @@ public class Locator extends Thread {
     public static final String TAG = Locator.class.getSimpleName();
     public static final int NOTIFICATION_LOCATOR = 555;
     public static final int NOTIFICATION_UI = 556;
-    public static final int DELTA = 180;
+    public static final int DELTA = 18;
     private static final int BUFF_COUNT = 32;
     private static final int BUFF_LAST_ROW = BUFF_COUNT - 1;
     private static final int CHUNK_SIZE = 512;
@@ -28,6 +29,7 @@ public class Locator extends Thread {
     private static final int BUFFER_SIZE = CHUNK_SIZE * CHUNK_COUNT;
     private static short[][] buffers = new short[BUFF_COUNT][BUFFER_SIZE];
     private SimpleDateFormat format = new SimpleDateFormat("HH_mm");
+    private SimpleDateFormat formatWide = new SimpleDateFormat("HH_mm_ss.SSS");
     private boolean isDebug = false; //LocatorApp.getInstance().isDebug();
     private Handler handler;
 
@@ -72,14 +74,26 @@ public class Locator extends Thread {
         return result;
     }
 
+    private double calculatePower(double[] buffer) {
+        double result = 0;
+
+        for (int i = 0; i < CHUNK_SIZE; i++) {
+            result += Math.pow(buffer[i], 2);
+        }
+
+        return result;
+    }
+
     @Override
     public void interrupt() {
         audioReceiverThread.interrupt();
 
-        try {
-            writer.close();
-        } catch (IOException e) {
-            Log.e(TAG, "java.io.IOException ", e);
+        if (isDebug) {
+            try {
+                writer.close();
+            } catch (IOException e) {
+                Log.e(TAG, "java.io.IOException ", e);
+            }
         }
 
         super.interrupt();
@@ -101,14 +115,13 @@ public class Locator extends Thread {
     private void writeToCSV(short[] buffer) {
         try {
             for (short i : buffer) {
-                char c = (char) i;
-                writer.append(c);
+                writer.append(Short.toString(i));
                 writer.append('\n');
             }
 
             writer.flush();
         } catch (IOException e) {
-            Log.e(TAG, "java.io.IOException ", e);
+//            Log.e(TAG, "java.io.IOException ", e);
         }
     }
 
@@ -118,7 +131,6 @@ public class Locator extends Thread {
             super.handleMessage(msg);
 
             if (isFirstRow) {
-                Log.w(TAG, "isFirstRow");
                 isFirstRow = false;
                 return;
             }
@@ -146,18 +158,44 @@ public class Locator extends Thread {
 
 
                 if (delta > DELTA) {
-                    Log.w(TAG, "delta = " + delta);
-                    Log.w(TAG, "left = " + left);
-                    Log.w(TAG, "center = " + center);
-                    Log.w(TAG, "right = " + right);
-                    Log.w(TAG, "offset = " + offset);
-                    Log.w(TAG, "rowNumber = " + rowNumber);
+//                    Log.w(TAG, "delta = " + delta);
+//                    Log.w(TAG, "left = " + left);
+//                    Log.w(TAG, "center = " + center);
+//                    Log.w(TAG, "right = " + right);
+//                    Log.w(TAG, "offset = " + offset);
+//                    Log.w(TAG, "rowNumber = " + rowNumber);
+
+                    int start;
+                    int finish;
+                    if (offset < 3) {
+                        start = (offset + 2) * CHUNK_SIZE;
+                        finish = start + CHUNK_SIZE;
+                    } else {
+                        start = (offset - 3) * CHUNK_SIZE;
+                        finish = start + CHUNK_SIZE;
+                    }
+                    double lowEnergy = calculatePower(BandPassFilter.filtering(Arrays.copyOfRange(buffers[rowNumber], start, finish)));
+                    double highEnergy = calculatePower(HighPassFilter.filtering(Arrays.copyOfRange(buffers[rowNumber], start, finish)));
+
+                    double balanse = lowEnergy / highEnergy;
+                    if (balanse > 1) {
+                        Log.w(TAG, "DETECT " + formatWide.format(new Date(time)));
+                    } else {
+                        Log.w(TAG, "balanse = " + balanse);
+                    }
+
 //                    handler.sendMessage(handler.obtainMessage(NOTIFICATION_UI, (int) (delta / 1000000), 0));
 
 //                    int v = (int) (delta);
 
 //                    Log.w(TAG, "Shut detect at " + formatter.format(new Date(time)) + " - delta " + v);
                 }
+/*
+                else {
+                    Log.w(TAG, "delta = " + delta);
+                }
+*/
+
             }
         }
     }
