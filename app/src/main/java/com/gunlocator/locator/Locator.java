@@ -3,6 +3,7 @@ package com.gunlocator.locator;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,8 +18,12 @@ import java.util.Arrays;
 import java.util.Date;
 
 public class Locator extends Thread {
-
     public static final String TAG = Locator.class.getSimpleName();
+
+    public static final String CFAR = "CFAR";
+    public static final String BALANCE = "BALANCE";
+    public static final String DELAY = "DELAY";
+
     public static final int NOTIFICATION_LOCATOR = 555;
     public static final int NOTIFICATION_UI = 556;
     public static final int DELTA = 18;
@@ -154,11 +159,11 @@ public class Locator extends Thread {
 
                 double right = offset == 0 ? calculatePower(rowNumber, 4) : calculatePower(nextRowNumber, offset - 1);
 
-                double delta = (center / ((left + right) / 2));
+                double cfar = (center / ((left + right) / 2));
 
 
-                if (delta > DELTA) {
-//                    Log.w(TAG, "delta = " + delta);
+                if (cfar > DELTA) {
+//                    Log.w(TAG, "cfar = " + cfar);
 //                    Log.w(TAG, "left = " + left);
 //                    Log.w(TAG, "center = " + center);
 //                    Log.w(TAG, "right = " + right);
@@ -179,20 +184,26 @@ public class Locator extends Thread {
 
                     double balanse = lowEnergy / highEnergy;
                     if (balanse > 1) {
-                        Log.w(TAG, "DETECT " + formatWide.format(new Date(time)));
+                        Log.w(TAG, "DETECT " + balanse + " at " + formatWide.format(new Date(time)));
                     } else {
                         Log.w(TAG, "balanse = " + balanse);
                     }
 
-//                    handler.sendMessage(handler.obtainMessage(NOTIFICATION_UI, (int) (delta / 1000000), 0));
+                    Message message = handler.obtainMessage(NOTIFICATION_UI);
+                    Bundle data = new Bundle();
+                    data.putDouble(CFAR, cfar);
+                    data.putDouble(BALANCE, balanse);
+                    data.putLong(DELAY, time);
+                    message.setData(data);
+                    handler.sendMessage(message);
 
-//                    int v = (int) (delta);
+//                    int v = (int) (cfar);
 
-//                    Log.w(TAG, "Shut detect at " + formatter.format(new Date(time)) + " - delta " + v);
+//                    Log.w(TAG, "Shut detect at " + formatter.format(new Date(time)) + " - cfar " + v);
                 }
 /*
                 else {
-                    Log.w(TAG, "delta = " + delta);
+                    Log.w(TAG, "cfar = " + cfar);
                 }
 */
 
@@ -231,9 +242,9 @@ public class Locator extends Thread {
             int count = 0;
 
             while (!isInterrupted()) {
-                long timeStamp = System.currentTimeMillis();
 
                 int samplesRead = record.read(buffers[count], 0, BUFFER_SIZE);
+                long timeStamp = System.nanoTime();
 
                 if (samplesRead == AudioRecord.ERROR_INVALID_OPERATION) {
                     System.err.println("read() returned ERROR_INVALID_OPERATION");

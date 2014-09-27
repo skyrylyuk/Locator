@@ -17,6 +17,26 @@
         android:gravity="center_horizontal"
         android:textSize="75dp"/>
 
+    <TextView
+        android:id="@+id/txvBalance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/txvLevel"
+        android:gravity="center_horizontal"
+        android:textSize="75dp"/>
+
+    <TextView
+        android:id="@+id/txvDelay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/txvBalance"
+        android:gravity="center_horizontal"
+        android:textSize="50dp"/>
+
     <ToggleButton
         android:id="@+id/tbtLocator"
         android:layout_width="match_parent"
@@ -25,14 +45,5 @@
         android:layout_centerHorizontal="true"
         android:padding="@dimen/activity_horizontal_margin"
         android:text="@string/locator"/>
-
-    <Button
-        android:id="@+id/buttonRS"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/tbtLocator"
-        android:layout_alignEnd="@+id/tbtLocator"
-        android:layout_alignRight="@+id/tbtLocator"
-        android:text="RS Button"/>
 
 </RelativeLayout>

@@ -3,39 +3,35 @@ package com.gunlocator;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.gunlocator.locator.Locator;
 
-import java.util.Arrays;
-
 
 public class MainActivity extends ActionBarActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
     private TextView txvLevel;
-    private RenderScript renderScript;
+    private TextView txvBalance;
+    private TextView txvDelay;
     private ToggleButton tbtLocator;
-    private int dataLength;
-    private Allocation allocation;
     private Locator locator;
-
-    private ScriptC_BandPassFilter bandPassFilter;
-
-    private short[] sources = {3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            txvLevel.setText("" + msg.arg1);
+
+            Bundle data = msg.getData();
+
+            double cfar = data.getDouble(Locator.CFAR);
+            txvLevel.setText(Double.toString(cfar).substring(0, 6));
+            double balance = data.getDouble(Locator.BALANCE);
+            txvBalance.setText(Double.toString(balance).substring(0, 6));
+            long delay = data.getLong(Locator.DELAY);
+            txvDelay.setText(Long.toString((System.nanoTime() - delay) / 1000000));
         }
     };
 
@@ -45,6 +41,9 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         txvLevel = (TextView) findViewById(R.id.txvLevel);
+        txvBalance = (TextView) findViewById(R.id.txvBalance);
+        txvDelay = (TextView) findViewById(R.id.txvDelay);
+
         tbtLocator = (ToggleButton) findViewById(R.id.tbtLocator);
         tbtLocator.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
@@ -60,35 +59,6 @@ public class MainActivity extends ActionBarActivity {
                     }
                 }
         );
-
-        Button buttonRS = (Button) findViewById(R.id.buttonRS);
-        buttonRS.setOnClickListener(v -> {
-            Allocation data = Allocation.createSized(renderScript, Element.I16(renderScript), sources.length, Allocation.USAGE_SCRIPT);
-            Allocation out = Allocation.createSized(renderScript, Element.I16(renderScript), sources.length, Allocation.USAGE_SCRIPT);
-            data.copy1DRangeFrom(0, sources.length, sources);
-
-            bandPassFilter.bind_data(data);
-            bandPassFilter.bind_out(out);
-            bandPassFilter.forEach_root(data, out);
-
-            short[] outs = new short[sources.length];
-            out.copyTo(outs);
-
-            Log.w(TAG, "Arrays.toString(sources) = " + Arrays.toString(sources));
-            Log.w(TAG, "Arrays.toString(outs) =    " + Arrays.toString(outs));
-        });
-
-        renderScript = RenderScript.create(this);
-        bandPassFilter = new ScriptC_BandPassFilter(renderScript);
-    }
-
-    public void startRecord(View view) {
-        Log.w(TAG, "MainActivity.startRecord");
-
-
-        locator = new Locator();
-        locator.setHandler(handler);
-        locator.start();
     }
 
     @Override
@@ -112,4 +82,5 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 }
