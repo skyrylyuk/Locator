@@ -62,7 +62,7 @@ public class Locator extends Thread {
             try {
                 handleBuffer(queue.take());
             } catch (InterruptedException e) {
-                Log.e(TAG, "java.lang.InterruptedException ", e);
+                interrupt();
             }
 
         }
@@ -256,7 +256,7 @@ public class Locator extends Thread {
                 try {
                     queue.put(CycleBufferNotifier.getInstance(count, timeStamp));
                 } catch (InterruptedException e) {
-                    Log.e(TAG, "java.lang.InterruptedException ", e);
+                    Locator.this.interrupt();
                 }
                 count = (count + 1) % BUFF_COUNT;
             }
