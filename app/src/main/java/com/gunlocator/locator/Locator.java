@@ -6,7 +6,6 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -16,6 +15,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Locator extends Thread {
     public static final String TAG = Locator.class.getSimpleName();
@@ -24,7 +24,6 @@ public class Locator extends Thread {
     public static final String BALANCE = "BALANCE";
     public static final String DELAY = "DELAY";
 
-    public static final int NOTIFICATION_LOCATOR = 555;
     public static final int NOTIFICATION_UI = 556;
     public static final int DELTA = 18;
     private static final int BUFF_COUNT = 32;
@@ -38,7 +37,7 @@ public class Locator extends Thread {
     private boolean isDebug = false; //LocatorApp.getInstance().isDebug();
     private Handler handler;
 
-    private Handler locatorHandler;
+    private LinkedBlockingQueue<CycleBufferNotifier> queue = new LinkedBlockingQueue<CycleBufferNotifier>(1);
 
     private AudioReceiverThread audioReceiverThread;
 
@@ -58,9 +57,16 @@ public class Locator extends Thread {
         audioReceiverThread = new AudioReceiverThread();
         audioReceiverThread.start();
 
-        Looper.prepare();
-        locatorHandler = new LocatorHandler();
-        Looper.loop();
+        while (!isInterrupted()) {
+
+            try {
+                handleBuffer(queue.take());
+            } catch (InterruptedException e) {
+                Log.e(TAG, "java.lang.InterruptedException ", e);
+            }
+
+        }
+
     }
 
     private double calculatePower(int row, int chunkNumber) {
@@ -130,39 +136,37 @@ public class Locator extends Thread {
         }
     }
 
-    private class LocatorHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
 
-            if (isFirstRow) {
-                isFirstRow = false;
-                return;
-            }
+    private void handleBuffer(CycleBufferNotifier msg) {
+        long time = msg.time;
+        long delay = System.nanoTime() - time;
 
-            int rowNumber = msg.arg1;
+        if (isFirstRow) {
+            isFirstRow = false;
+            return;
+        }
+        int rowNumber = msg.row;
 
-            if (isDebug) {
-                writeToCSV(buffers[rowNumber]);
-            }
-
-            long time = (long) msg.obj;
-
-            int nextRowNumber = rowNumber;
-            rowNumber = rowNumber == 0 ? BUFF_LAST_ROW : rowNumber - 1;
-
-            for (int offset = 0; offset < CHUNK_COUNT; offset++) {
-
-                double left = calculatePower(rowNumber, offset);
-
-                double center = offset < 3 ? calculatePower(rowNumber, offset + 2) : calculatePower(nextRowNumber, offset - 3);
-
-                double right = offset == 0 ? calculatePower(rowNumber, 4) : calculatePower(nextRowNumber, offset - 1);
-
-                double cfar = (center / ((left + right) / 2));
+        if (isDebug) {
+            writeToCSV(buffers[rowNumber]);
+        }
 
 
-                if (cfar > DELTA) {
+        int nextRowNumber = rowNumber;
+        rowNumber = rowNumber == 0 ? BUFF_LAST_ROW : rowNumber - 1;
+
+        for (int offset = 0; offset < CHUNK_COUNT; offset++) {
+
+            double left = calculatePower(rowNumber, offset);
+
+            double center = offset < 3 ? calculatePower(rowNumber, offset + 2) : calculatePower(nextRowNumber, offset - 3);
+
+            double right = offset == 0 ? calculatePower(rowNumber, 4) : calculatePower(nextRowNumber, offset - 1);
+
+            double cfar = (center / ((left + right) / 2));
+
+
+            if (cfar > DELTA) {
 //                    Log.w(TAG, "cfar = " + cfar);
 //                    Log.w(TAG, "left = " + left);
 //                    Log.w(TAG, "center = " + center);
@@ -170,43 +174,35 @@ public class Locator extends Thread {
 //                    Log.w(TAG, "offset = " + offset);
 //                    Log.w(TAG, "rowNumber = " + rowNumber);
 
-                    int start;
-                    int finish;
-                    if (offset < 3) {
-                        start = (offset + 2) * CHUNK_SIZE;
-                        finish = start + CHUNK_SIZE;
-                    } else {
-                        start = (offset - 3) * CHUNK_SIZE;
-                        finish = start + CHUNK_SIZE;
-                    }
-                    double lowEnergy = calculatePower(BandPassFilter.filtering(Arrays.copyOfRange(buffers[rowNumber], start, finish)));
-                    double highEnergy = calculatePower(HighPassFilter.filtering(Arrays.copyOfRange(buffers[rowNumber], start, finish)));
+                int start;
+                int finish;
+                if (offset < 3) {
+                    start = (offset + 2) * CHUNK_SIZE;
+                    finish = start + CHUNK_SIZE;
+                } else {
+                    start = (offset - 3) * CHUNK_SIZE;
+                    finish = start + CHUNK_SIZE;
+                }
+                double lowEnergy = calculatePower(BandPassFilter.filtering(Arrays.copyOfRange(buffers[rowNumber], start, finish)));
+                double highEnergy = calculatePower(HighPassFilter.filtering(Arrays.copyOfRange(buffers[rowNumber], start, finish)));
 
-                    double balanse = lowEnergy / highEnergy;
-                    if (balanse > 1) {
-                        Log.w(TAG, "DETECT " + balanse + " at " + formatWide.format(new Date(time)));
-                    } else {
-                        Log.w(TAG, "balanse = " + balanse);
-                    }
+                double balanse = lowEnergy / highEnergy;
+
+                if (balanse > 1) {
+//                        Log.w(TAG, "DETECT " + balanse + " at " + formatWide.format(new Date(time)));
 
                     Message message = handler.obtainMessage(NOTIFICATION_UI);
                     Bundle data = new Bundle();
                     data.putDouble(CFAR, cfar);
                     data.putDouble(BALANCE, balanse);
-                    data.putLong(DELAY, time);
+
+                    data.putLong(DELAY, delay);
                     message.setData(data);
+
                     handler.sendMessage(message);
-
-//                    int v = (int) (cfar);
-
-//                    Log.w(TAG, "Shut detect at " + formatter.format(new Date(time)) + " - cfar " + v);
+                } else {
+                    Log.w(TAG, "delay = " + (delay));
                 }
-/*
-                else {
-                    Log.w(TAG, "cfar = " + cfar);
-                }
-*/
-
             }
         }
     }
@@ -257,7 +253,11 @@ public class Locator extends Thread {
                 }
 
                 // send Message count
-                locatorHandler.sendMessage(locatorHandler.obtainMessage(NOTIFICATION_LOCATOR, count, 0, timeStamp));
+                try {
+                    queue.put(CycleBufferNotifier.getInstance(count, timeStamp));
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "java.lang.InterruptedException ", e);
+                }
                 count = (count + 1) % BUFF_COUNT;
             }
             try {

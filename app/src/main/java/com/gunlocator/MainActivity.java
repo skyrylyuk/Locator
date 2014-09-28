@@ -31,7 +31,8 @@ public class MainActivity extends ActionBarActivity {
             double balance = data.getDouble(Locator.BALANCE);
             txvBalance.setText(Double.toString(balance).substring(0, 6));
             long delay = data.getLong(Locator.DELAY);
-            txvDelay.setText(Long.toString((System.nanoTime() - delay) / 1000000));
+//            txvDelay.setText(Long.toString((System.nanoTime() - delay) / 1000000));
+            txvDelay.setText(Long.toString(delay / 1000000));
         }
     };
 
