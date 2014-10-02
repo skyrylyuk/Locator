@@ -33,11 +33,11 @@ public class Locator extends Thread {
     private static final int BUFFER_SIZE = CHUNK_SIZE * CHUNK_COUNT;
     private static short[][] buffers = new short[BUFF_COUNT][BUFFER_SIZE];
     private SimpleDateFormat format = new SimpleDateFormat("HH_mm");
-    private SimpleDateFormat formatWide = new SimpleDateFormat("HH_mm_ss.SSS");
+    //    public SimpleDateFormat formatWide = new SimpleDateFormat("HH_mm_ss.SSS");
     private boolean isDebug = false; //LocatorApp.getInstance().isDebug();
     private Handler handler;
 
-    private LinkedBlockingQueue<CycleBufferNotifier> queue = new LinkedBlockingQueue<CycleBufferNotifier>(1);
+    private LinkedBlockingQueue<CycleBufferNotifier> queue = new LinkedBlockingQueue<>(1);
 
     private AudioReceiverThread audioReceiverThread;
 

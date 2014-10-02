@@ -7,11 +7,12 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.gunlocator.gps.LocationHelper;
 import com.gunlocator.locator.Locator;
-
 
 public class MainActivity extends ActionBarActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
@@ -19,7 +20,9 @@ public class MainActivity extends ActionBarActivity {
     private TextView txvBalance;
     private TextView txvDelay;
     private ToggleButton tbtLocator;
+    private Button btnGetTime;
     private Locator locator;
+    private LocationHelper locationHelper;
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -52,6 +55,8 @@ public class MainActivity extends ActionBarActivity {
                         locator = new Locator();
                         locator.setHandler(handler);
                         locator.start();
+
+                        locationHelper.start();
                     } else {
                         Log.w(TAG, "MainActivity.stop Record");
                         if (locator != null) {
@@ -60,6 +65,17 @@ public class MainActivity extends ActionBarActivity {
                     }
                 }
         );
+
+/*
+        btnGetTime = (Button) findViewById(R.id.btnGetTime);
+        btnGetTime.setOnClickListener(v -> {
+        });
+*/
+
+        locationHelper = new LocationHelper(this);
+        locationHelper.setOnGPSTimeChange(gpsTime -> {
+            Log.w(TAG, "gpsTime = " + gpsTime);
+        });
     }
 
     @Override
@@ -83,5 +99,4 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
-
 }

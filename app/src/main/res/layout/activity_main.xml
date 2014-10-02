@@ -37,6 +37,15 @@
         android:gravity="center_horizontal"
         android:textSize="50dp"/>
 
+    <Button
+        android:id="@+id/btnGetTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/tbtLocator"
+        android:padding="@dimen/activity_horizontal_margin"
+        android:text="@string/locator"
+        android:visibility="gone"/>
+
     <ToggleButton
         android:id="@+id/tbtLocator"
         android:layout_width="match_parent"
