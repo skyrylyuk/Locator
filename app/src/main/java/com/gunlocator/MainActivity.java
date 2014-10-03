@@ -66,16 +66,32 @@ public class MainActivity extends ActionBarActivity {
                 }
         );
 
-/*
         btnGetTime = (Button) findViewById(R.id.btnGetTime);
         btnGetTime.setOnClickListener(v -> {
         });
-*/
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         locationHelper = new LocationHelper(this);
         locationHelper.setOnGPSTimeChange(gpsTime -> {
             Log.w(TAG, "gpsTime = " + gpsTime);
         });
+
+        locationHelper.start();
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (locationHelper != null) {
+            locationHelper.stop();
+        }
     }
 
     @Override

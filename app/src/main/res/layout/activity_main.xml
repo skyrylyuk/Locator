@@ -43,8 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/tbtLocator"
         android:padding="@dimen/activity_horizontal_margin"
-        android:text="@string/locator"
-        android:visibility="gone"/>
+        android:text="@string/locator"/>
 
     <ToggleButton
         android:id="@+id/tbtLocator"
