@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/tbtLocator"
         android:padding="@dimen/activity_horizontal_margin"
-        android:text="@string/locator"/>
+        android:text="@string/test"/>
 
     <ToggleButton
         android:id="@+id/tbtLocator"
@@ -51,7 +51,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:padding="@dimen/activity_horizontal_margin"
-        android:text="@string/locator"/>
+        android:padding="@dimen/activity_horizontal_margin"/>
 
 </RelativeLayout>

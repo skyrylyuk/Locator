@@ -68,6 +68,10 @@ public class MainActivity extends ActionBarActivity {
 
         btnGetTime = (Button) findViewById(R.id.btnGetTime);
         btnGetTime.setOnClickListener(v -> {
+            locator = new Locator(true);
+            locator.setHandler(handler);
+            locator.start();
+
         });
 
     }

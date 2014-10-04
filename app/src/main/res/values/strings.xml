@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">GunLocator</string>
-    <string name="locator">Locator</string>
     <string name="action_settings">Settings</string>
 
+    <string name="test">Test</string>
 </resources>

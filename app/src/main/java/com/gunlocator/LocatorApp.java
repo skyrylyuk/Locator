@@ -9,9 +9,9 @@ import android.content.pm.ApplicationInfo;
  */
 public class LocatorApp extends Application {
 
+    public static final String ttt = "dfdfd";
+    public static LocatorApp instance;
     private static Context applicationContext;
-
-    private static LocatorApp instance;
 
     public static LocatorApp getInstance() {
         return instance;

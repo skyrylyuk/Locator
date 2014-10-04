@@ -9,9 +9,14 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import com.gunlocator.LocatorApp;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -41,6 +46,8 @@ public class Locator extends Thread {
 
     private AudioReceiverThread audioReceiverThread;
 
+//    LocatorApp.
+
     private boolean isFirstRow = true;
     private FileWriter writer;
 
@@ -48,13 +55,22 @@ public class Locator extends Thread {
         if (isDebug) {
             getFileWriter();
         }
+
+        audioReceiverThread = new AudioReceiverThread();
+    }
+
+    public Locator(boolean isDebug) {
+        if (isDebug) {
+            getFileWriter();
+        }
+
+        audioReceiverThread = new AudioReceiverThreadMock();
     }
 
     @Override
     public void run() {
         super.run();
 
-        audioReceiverThread = new AudioReceiverThread();
         audioReceiverThread.start();
 
         while (!isInterrupted()) {
@@ -167,12 +183,14 @@ public class Locator extends Thread {
 
 
             if (cfar > DELTA) {
-//                    Log.w(TAG, "cfar = " + cfar);
-//                    Log.w(TAG, "left = " + left);
-//                    Log.w(TAG, "center = " + center);
-//                    Log.w(TAG, "right = " + right);
-//                    Log.w(TAG, "offset = " + offset);
-//                    Log.w(TAG, "rowNumber = " + rowNumber);
+/*
+                    Log.w(TAG, "cfar = " + cfar);
+                    Log.w(TAG, "left = " + left);
+                    Log.w(TAG, "center = " + center);
+                    Log.w(TAG, "right = " + right);
+                    Log.w(TAG, "offset = " + offset);
+                    Log.w(TAG, "rowNumber = " + rowNumber);
+*/
 
                 int start;
                 int finish;
@@ -267,13 +285,54 @@ public class Locator extends Thread {
                     e.printStackTrace();
                 }
             } finally {
-                // освобождаем ресурсы
                 record.release();
                 record = null;
             }
 
         }
+    }
 
+    private class AudioReceiverThreadMock extends AudioReceiverThread {
+
+        @Override
+        public void run() {
+//            super.run();
+
+            try {
+                InputStream stream = LocatorApp.getInstance().getAssets().open("shock.1.csv");
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                String str = null;
+
+                in.readLine();
+
+                for (int i = 0; i < BUFFER_SIZE && (str = in.readLine()) != null; i++) {
+                    short v = Short.parseShort(str);
+                    buffers[0][i] = v;
+                }
+
+                in.close();
+
+                try {
+                    queue.put(CycleBufferNotifier.getInstance(0, System.currentTimeMillis()));
+                } catch (InterruptedException e) {
+                    Locator.this.interrupt();
+                }
+
+                System.arraycopy(buffers[0], 0, buffers[1], 0, BUFFER_SIZE);
+
+                try {
+                    queue.put(CycleBufferNotifier.getInstance(1, System.currentTimeMillis()));
+                } catch (InterruptedException e) {
+                    Locator.this.interrupt();
+                }
+
+
+            } catch (IOException e) {
+                Log.e(TAG, "java.io.IOException ", e);
+            }
+
+        }
     }
 }
 
