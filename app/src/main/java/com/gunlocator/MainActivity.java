@@ -1,5 +1,7 @@
 package com.gunlocator;
 
+import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -55,6 +57,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        lockMulticast();
         setContentView(R.layout.activity_main);
 
         txvLevel = (TextView) findViewById(R.id.txvLevel);
@@ -83,14 +86,10 @@ public class MainActivity extends ActionBarActivity {
         btnGetTime.setOnClickListener(v -> {
 
             quoteOfTheMomentServer = QuoteOfTheMomentServer.getInstance(handler);
-//            quoteOfTheMomentServer.start();
-
 
             quoteOfTheMomentClient = new QuoteOfTheMomentClient(1234);
             quoteOfTheMomentClient.start();
-
         });
-
     }
 
     @Override
@@ -135,5 +134,13 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void lockMulticast() {
+        WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        if (wifi != null) {
+            WifiManager.MulticastLock lock = wifi.createMulticastLock("Log_Tag");
+            lock.acquire();
+        }
     }
 }

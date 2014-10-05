@@ -11,7 +11,6 @@ import android.util.Log;
 import com.gunlocator.MainActivity;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -73,6 +72,7 @@ public final class QuoteOfTheMomentServer extends Thread {
 
             handler.sendMessage(handler.obtainMessage(MainActivity.REMOTE_MESSAGE, packet.sender().toString()));
 
+/*
             System.err.println(packet);
             ByteBuf content = packet.content();
             Log.w(TAG, "========================================================================");
@@ -80,11 +80,6 @@ public final class QuoteOfTheMomentServer extends Thread {
             Log.w(TAG, "========================================================================");
             Log.w(TAG, "content.readDouble() = " + content.readDouble());
             Log.w(TAG, "========================================================================");
-/*
-            if ("QOTM?".equals(packet.content().toString(CharsetUtil.UTF_8))) {
-                ctx.write(new DatagramPacket(
-                        Unpooled.copiedBuffer("QOTM: " + nextQuote(), CharsetUtil.UTF_8), packet.sender()));
-            }
 */
         }
 

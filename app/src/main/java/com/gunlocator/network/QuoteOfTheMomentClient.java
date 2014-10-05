@@ -37,14 +37,11 @@ public final class QuoteOfTheMomentClient extends Thread {
     public void run() {
         super.run();
 
-        Log.w(TAG, "QuoteOfTheMomentClient.run");
         try {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
             Log.e(TAG, "java.lang.InterruptedException ", e);
         }
-
-        Log.w(TAG, "Weak up client");
 
         try {
             Bootstrap b = new Bootstrap();
