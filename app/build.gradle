@@ -27,11 +27,20 @@ android {
     lintOptions {
         abortOnError false
     }
+
+    packagingOptions {
+        exclude 'META-INF/io.netty.versions.properties'
+        exclude 'META-INF/INDEX.LIST'
+    }
 }
 
 dependencies {
     compile 'com.android.support:appcompat-v7:20.0.0'
+    compile 'io.netty:netty-buffer:4.1.+'
+    compile 'io.netty:netty-common:4.1.+'
+    compile 'io.netty:netty-transport:4.1.+'
 }
+
 retrolambda {
     jdk System.getenv("JAVA_HOME")
 //    oldJdk System.getenv("JAVA6_HOME")

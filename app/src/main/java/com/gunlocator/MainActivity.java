@@ -13,9 +13,35 @@ import android.widget.ToggleButton;
 
 import com.gunlocator.gps.LocationHelper;
 import com.gunlocator.locator.Locator;
+import com.gunlocator.network.QuoteOfTheMomentClient;
+import com.gunlocator.network.QuoteOfTheMomentServer;
 
 public class MainActivity extends ActionBarActivity {
     public static final String TAG = MainActivity.class.getSimpleName();
+
+    public static final int LOCAL_MESSAGE = 0;
+    public static final int REMOTE_MESSAGE = 1;
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case LOCAL_MESSAGE: {
+                    Bundle data = msg.getData();
+                    double cfar = data.getDouble(Locator.CFAR);
+                    txvLevel.setText(Double.toString(cfar).substring(0, 6));
+                    double balance = data.getDouble(Locator.BALANCE);
+                    txvBalance.setText(Double.toString(balance).substring(0, 6));
+                    long delay = data.getLong(Locator.DELAY);
+//            txvDelay.setText(Long.toString((System.nanoTime() - delay) / 1000000));
+                    txvDelay.setText(Long.toString(delay / 1000000));
+                    break;
+                }
+                case REMOTE_MESSAGE: {
+                    txvBalance.setText((String) msg.obj);
+                }
+            }
+        }
+    };
     private TextView txvLevel;
     private TextView txvBalance;
     private TextView txvDelay;
@@ -23,21 +49,8 @@ public class MainActivity extends ActionBarActivity {
     private Button btnGetTime;
     private Locator locator;
     private LocationHelper locationHelper;
-    private Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-
-            Bundle data = msg.getData();
-
-            double cfar = data.getDouble(Locator.CFAR);
-            txvLevel.setText(Double.toString(cfar).substring(0, 6));
-            double balance = data.getDouble(Locator.BALANCE);
-            txvBalance.setText(Double.toString(balance).substring(0, 6));
-            long delay = data.getLong(Locator.DELAY);
-//            txvDelay.setText(Long.toString((System.nanoTime() - delay) / 1000000));
-            txvDelay.setText(Long.toString(delay / 1000000));
-        }
-    };
+    private QuoteOfTheMomentClient quoteOfTheMomentClient;
+    private QuoteOfTheMomentServer quoteOfTheMomentServer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,9 +81,13 @@ public class MainActivity extends ActionBarActivity {
 
         btnGetTime = (Button) findViewById(R.id.btnGetTime);
         btnGetTime.setOnClickListener(v -> {
-            locator = new Locator(true);
-            locator.setHandler(handler);
-            locator.start();
+
+            quoteOfTheMomentServer = QuoteOfTheMomentServer.getInstance(handler);
+//            quoteOfTheMomentServer.start();
+
+
+            quoteOfTheMomentClient = new QuoteOfTheMomentClient(1234);
+            quoteOfTheMomentClient.start();
 
         });
 
