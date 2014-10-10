@@ -20,7 +20,7 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 public class Locator extends Thread {
     public static final String TAG = Locator.class.getSimpleName();
@@ -42,7 +42,7 @@ public class Locator extends Thread {
     private boolean isDebug = false; //LocatorApp.getInstance().isDebug();
     private Handler handler;
 
-    private LinkedBlockingQueue<CycleBufferNotifier> queue = new LinkedBlockingQueue<>(1);
+    private SynchronousQueue<CycleBufferNotifier> queue = new SynchronousQueue<>();
 
     private AudioReceiverThread audioReceiverThread;
 
